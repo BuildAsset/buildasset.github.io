@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ナンバーサム島 - すうじの たびに でかけよう！</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Yusei+Magic&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#bfe8ff;
+    --sky-bottom:#eaf7ff;
+    --sea:#7fd6d6;
+    --sand:#ffe9b8;
+    --ink:#3a3a55;
+    --ink-soft:#6b6b8a;
+    --coral:#ff9466;
+    --coral-dark:#f3703f;
+    --leaf:#63c78a;
+    --leaf-dark:#3fa869;
+    --sun:#ffcf5c;
+    --white:#fffdf8;
+    --card-bg:#ffffff;
+    --lock:#b7b7c9;
+    --danger:#e8654f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic Medium",sans-serif;
+    background:linear-gradient(180deg,var(--sky-top) 0%, var(--sky-bottom) 45%, var(--sea) 100%);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    overflow-x:hidden;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    padding-bottom:24px;
+  }
+  .screen{display:none;flex-direction:column;flex:1;padding:18px 16px 8px;animation:fadeIn .35s ease;}
+  .screen.active{display:flex;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- Clouds decoration ---------- */
+  .cloud{position:absolute;background:#fff;border-radius:50px;opacity:.85;filter:blur(.3px);}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+
+  /* ---------- Title screen ---------- */
+  .title-wrap{align-items:center;text-align:center;padding-top:10px;}
+  .logo-badge{
+    font-family:"Yusei Magic",sans-serif;
+    font-size:15px;
+    letter-spacing:.12em;
+    color:var(--coral-dark);
+    background:#fff;
+    display:inline-block;
+    padding:5px 16px;
+    border-radius:20px;
+    box-shadow:0 3px 0 #ffd2b8;
+    margin-bottom:8px;
+  }
+  .title-main{
+    font-size:40px;
+    font-weight:900;
+    line-height:1.15;
+    color:var(--ink);
+    text-shadow:2px 3px 0 #fff, 4px 5px 0 rgba(255,148,102,.35);
+    margin:6px 0 2px;
+  }
+  .title-sub{font-size:14px;color:var(--ink-soft);margin-bottom:22px;}
+  .island-preview{
+    width:210px;height:210px;margin:0 auto 22px;position:relative;
+  }
+  .island-preview .isl{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffe3b0, var(--sand));
+    box-shadow:0 10px 0 -2px rgba(0,0,0,.06);
+  }
+  .float-num{
+    position:absolute;
+    font-weight:900;font-size:26px;color:var(--white);
+    background:var(--coral);
+    width:44px;height:44px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 5px 0 var(--coral-dark);
+    animation:bob 3s ease-in-out infinite;
+  }
+  .float-num.b{background:var(--leaf);box-shadow:0 5px 0 var(--leaf-dark);animation-delay:.6s;}
+  .float-num.c{background:#7fb8e6;box-shadow:0 5px 0 #4f8fc4;animation-delay:1.2s;}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-10px) rotate(3deg);}}
+
+  .btn{
+    font-family:inherit;
+    border:none;
+    border-radius:18px;
+    font-weight:700;
+    font-size:18px;
+    padding:16px 20px;
+    cursor:pointer;
+    color:#fff;
+    width:100%;
+    box-shadow:0 5px 0 rgba(0,0,0,.18);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.18);}
+  .btn-primary{background:var(--coral);box-shadow:0 5px 0 var(--coral-dark);}
+  .btn-leaf{background:var(--leaf);box-shadow:0 5px 0 var(--leaf-dark);}
+  .btn-sky{background:#7fb8e6;box-shadow:0 5px 0 #4f8fc4;}
+  .btn-ghost{background:#fff;color:var(--ink-soft);box-shadow:0 4px 0 #ddd6c9;font-size:14px;padding:11px 16px;}
+  .btn-danger{background:var(--danger);box-shadow:0 5px 0 #b8402c;}
+  .btn-sm{font-size:14px;padding:10px 14px;border-radius:14px;}
+  .stack{display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;margin:0 auto;}
+
+  .footer-links{display:flex;justify-content:center;gap:10px;margin-top:22px;flex-wrap:wrap;}
+
+  /* ---------- Level select (island map) ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .topbar h2{font-size:20px;margin:0;}
+  .icon-btn{
+    background:#fff;border:none;border-radius:14px;width:42px;height:42px;
+    box-shadow:0 4px 0 #ddd6c9;font-size:18px;cursor:pointer;
+  }
+  .icon-btn:active{transform:translateY(3px);box-shadow:none;}
+  .map-scroll{display:flex;flex-direction:column;gap:16px;margin-top:14px;padding-bottom:10px;}
+  .level-card{
+    display:flex;align-items:center;gap:14px;
+    background:var(--card-bg);
+    border-radius:22px;
+    padding:14px;
+    box-shadow:0 6px 0 #e5ddcb;
+    position:relative;
+    cursor:pointer;
+    border:3px solid transparent;
+  }
+  .level-card.locked{opacity:.55;cursor:default;}
+  .level-card .isl-icon{
+    width:58px;height:58px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;flex-shrink:0;color:#fff;font-weight:900;
+  }
+  .lvl1 .isl-icon{background:#8fd3ce;}
+  .lvl2 .isl-icon{background:#8fc4e6;}
+  .lvl3 .isl-icon{background:#9bd08a;}
+  .lvl4 .isl-icon{background:#f2b06b;}
+  .lvl5 .isl-icon{background:#e58a9a;}
+  .level-info{flex:1;}
+  .level-info .lname{font-size:16px;font-weight:700;}
+  .level-info .ldesc{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .level-stars{display:flex;gap:2px;margin-top:5px;font-size:14px;}
+  .lock-icon{font-size:22px;color:var(--lock);}
+  .progress-pill{
+    font-size:11px;background:#fff3e0;color:var(--coral-dark);
+    padding:3px 9px;border-radius:10px;font-weight:700;margin-top:4px;display:inline-block;
+  }
+
+  /* ---------- Game screen ---------- */
+  .game-top{display:flex;align-items:center;justify-content:space-between;}
+  .chip{
+    background:#fff;border-radius:14px;padding:7px 12px;font-weight:700;font-size:13px;
+    box-shadow:0 3px 0 #e5ddcb;display:flex;align-items:center;gap:5px;
+  }
+  .chip.timer{color:var(--coral-dark);}
+  .progress-dots{display:flex;justify-content:center;gap:7px;margin:12px 0 6px;}
+  .pdot{width:10px;height:10px;border-radius:50%;background:#dcd3ea;}
+  .pdot.done{background:var(--leaf);}
+  .pdot.cur{background:var(--coral);transform:scale(1.35);}
+
+  .board-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0 10px;}
+  .board{display:grid;gap:8px;}
+  .cell-btn{
+    width:64px;height:64px;border-radius:16px;border:none;
+    background:#eef0f7;color:var(--ink);
+    font-size:24px;font-weight:900;
+    box-shadow:0 4px 0 #d3d3e2;
+    cursor:pointer;transition:transform .12s ease, background .15s ease, box-shadow .12s ease;
+    font-family:inherit;
+  }
+  .cell-btn:active{transform:translateY(2px);}
+  .cell-btn.sel{
+    background:var(--coral);color:#fff;box-shadow:0 4px 0 var(--coral-dark);
+    transform:scale(1.04);
+  }
+  .cell-btn.pop{animation:pop .18s ease;}
+  @keyframes pop{0%{transform:scale(.85);}60%{transform:scale(1.12);}100%{transform:scale(1.04);}}
+
+  .target-box{
+    width:64px;height:64px;border-radius:16px;
+    background:#fff;border:2.5px dashed #cfc7e6;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-weight:900;font-size:18px;color:var(--ink-soft);
+    transition:all .2s ease;
+  }
+  .target-box .cur{font-size:10px;font-weight:700;color:#a7a0c2;margin-top:1px;}
+  .target-box.match{
+    background:var(--leaf);border-color:var(--leaf-dark);color:#fff;
+    animation:ding .45s ease;
+  }
+  .target-box.match .cur{color:#eafff2;}
+  .target-box.over{background:#ffe3df;border-color:var(--danger);color:var(--danger);}
+  @keyframes ding{0%{transform:scale(.8);}45%{transform:scale(1.22);}100%{transform:scale(1);}}
+  .corner-box{width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+
+  .controls-row{display:flex;gap:10px;margin-top:10px;}
+  .controls-row .btn{font-size:15px;padding:13px 10px;}
+
+  .hint-text{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:8px;}
+
+  /* ---------- Modal (result / card unlock) ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(58,58,85,.55);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    background:#fff;border-radius:26px;padding:26px 22px;max-width:340px;width:100%;
+    text-align:center;box-shadow:0 12px 0 rgba(0,0,0,.12);
+    animation:modalIn .3s cubic-bezier(.2,1.4,.5,1);
+  }
+  @keyframes modalIn{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .stars-big{font-size:40px;letter-spacing:6px;margin:8px 0;}
+  .modal-title{font-size:20px;font-weight:900;margin:2px 0 4px;}
+  .modal-sub{font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+  .card-reveal{
+    width:150px;height:150px;margin:8px auto 14px;border-radius:24px;
+    background:linear-gradient(160deg,#fff6e0,#ffe1c2);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:0 6px 0 #f0d4ad;
+    animation:cardPop .5s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes cardPop{0%{transform:scale(0) rotate(-15deg);}70%{transform:scale(1.1) rotate(4deg);}100%{transform:scale(1) rotate(0);}}
+  .card-reveal .emoji{font-size:56px;}
+  .card-reveal .cname{font-size:14px;font-weight:700;margin-top:6px;color:var(--ink);}
+
+  /* ---------- Gallery ---------- */
+  .gallery-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:14px;}
+  .gcard{
+    background:#fff;border-radius:20px;padding:16px 8px;text-align:center;
+    box-shadow:0 5px 0 #e5ddcb;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .gcard.locked{opacity:.4;}
+  .gcard .emoji{font-size:44px;}
+  .gcard .cname{font-size:13px;font-weight:700;margin-top:8px;}
+  .gcard .clevel{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+
+  .backbar{margin-bottom:8px;}
+
+  @media (max-width:360px){
+    .cell-btn,.target-box,.corner-box{width:54px;height:54px;font-size:20px;}
+    .title-main{font-size:33px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== TITLE SCREEN ===================== -->
+  <section id="screen-title" class="screen active title-wrap">
+    <div class="logo-badge">かずの たんけん island</div>
+    <div class="title-main">ナンバーサム<br>島</div>
+    <div class="title-sub">たしざんパズルで しまを たんけんしよう！</div>
+
+    <div class="island-preview">
+      <div class="isl" style="width:180px;height:180px;left:15px;top:35px;"></div>
+      <div class="float-num" style="left:8px;top:10px;">7</div>
+      <div class="float-num b" style="right:0px;top:60px;">12</div>
+      <div class="float-num c" style="left:60px;bottom:0px;">5</div>
+    </div>
+
+    <div class="stack">
+      <button class="btn btn-primary" onclick="goLevelSelect()">▶ はじめる</button>
+      <button class="btn btn-leaf" onclick="openGallery()">📖 ずかん を みる</button>
+    </div>
+    <div class="footer-links">
+      <button class="btn btn-ghost btn-sm" onclick="confirmResetSave()">🗑 すべての セーブデータを けす</button>
+    </div>
+  </section>
+
+  <!-- ===================== LEVEL SELECT ===================== -->
+  <section id="screen-levels" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" onclick="goTitle()">←</button>
+      <h2>しまを えらぼう</h2>
+      <button class="icon-btn" onclick="openGallery()">📖</button>
+    </div>
+    <div class="map-scroll" id="level-list"></div>
+  </section>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <section id="screen-game" class="screen">
+    <div class="game-top">
+      <button class="icon-btn" onclick="exitGame()">←</button>
+      <div class="chip timer">⏱ <span id="timer-disp">0.0</span>秒</div>
+      <div class="chip">Lv.<span id="cur-level-num"></span></div>
+    </div>
+    <div class="progress-dots" id="progress-dots"></div>
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+    </div>
+    <div class="controls-row">
+      <button class="btn btn-sky btn-sm" onclick="undoMove()">↩ 1手もどる</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetBoard()">🔄 はじめから</button>
+    </div>
+    <div class="hint-text">すうじを タップして たてよこの もくひょうに あわせよう！</div>
+  </section>
+
+  <!-- ===================== GALLERY ===================== -->
+  <section id="screen-gallery" class="screen">
+    <div class="topbar backbar">
+      <button class="icon-btn" onclick="goBackFromGallery()">←</button>
+      <h2>ずかん（なかまたち）</h2>
+      <div style="width:42px;"></div>
+    </div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </section>
+
+</div>
+
+<!-- ===================== MODAL ===================== -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+const PUZZLES = {"1":[{"grid":[[3,2],[5,2]],"rowTargets":[2,7],"colTargets":[5,4],"solutionMask":[0,1,1,1],"rows":2,"cols":2},{"grid":[[4,2],[8,1]],"rowTargets":[4,9],"colTargets":[12,1],"solutionMask":[1,0,1,1],"rows":2,"cols":2},{"grid":[[8,5],[4,2]],"rowTargets":[8,6],"colTargets":[12,2],"solutionMask":[1,0,1,1],"rows":2,"cols":2},{"grid":[[9,2],[3,9]],"rowTargets":[11,3],"colTargets":[12,2],"solutionMask":[1,1,1,0],"rows":2,"cols":2},{"grid":[[9,3],[5,5]],"rowTargets":[3,10],"colTargets":[5,8],"solutionMask":[0,1,1,1],"rows":2,"cols":2}],"2":[{"grid":[[4,1],[10,13]],"rowTargets":[5,13],"colTargets":[4,14],"solutionMask":[1,1,0,1],"rows":2,"cols":2},{"grid":[[13,5],[2,6]],"rowTargets":[13,8],"colTargets":[15,6],"solutionMask":[1,0,1,1],"rows":2,"cols":2},{"grid":[[3,10],[10,6]],"rowTargets":[3,16],"colTargets":[13,6],"solutionMask":[1,0,1,1],"rows":2,"cols":2},{"grid":[[7,12],[4,7]],"rowTargets":[19,11],"colTargets":[11,19],"solutionMask":[1,1,1,1],"rows":2,"cols":2},{"grid":[[4,13],[10,17]],"rowTargets":[17,10],"colTargets":[14,13],"solutionMask":[1,1,1,0],"rows":2,"cols":2}],"3":[{"grid":[[6,8,2],[3,1,1],[1,4,1]],"rowTargets":[8,1,6],"colTargets":[7,4,4],"solutionMask":[1,0,1,0,0,1,1,1,1],"rows":3,"cols":3},{"grid":[[9,1,7],[5,3,2],[8,5,1]],"rowTargets":[9,3,1],"colTargets":[9,3,1],"solutionMask":[1,0,0,0,1,0,0,0,1],"rows":3,"cols":3},{"grid":[[1,6,2],[2,2,5],[6,4,5]],"rowTargets":[1,5,4],"colTargets":[1,4,5],"solutionMask":[1,0,0,0,0,1,0,1,0],"rows":3,"cols":3},{"grid":[[4,4,6],[2,6,1],[8,1,3]],"rowTargets":[4,6,4],"colTargets":[4,7,3],"solutionMask":[1,0,0,0,1,0,0,1,1],"rows":3,"cols":3},{"grid":[[4,4,3],[3,4,1],[3,8,6]],"rowTargets":[4,5,6],"colTargets":[4,4,7],"solutionMask":[1,0,0,0,1,1,0,0,1],"rows":3,"cols":3}],"4":[{"grid":[[2,19,7],[19,15,16],[13,10,12]],"rowTargets":[9,15,13],"colTargets":[15,15,7],"solutionMask":[1,0,1,0,1,0,1,0,0],"rows":3,"cols":3},{"grid":[[1,12,3],[14,5,4],[18,6,11]],"rowTargets":[3,5,29],"colTargets":[18,5,14],"solutionMask":[0,0,1,0,1,0,1,0,1],"rows":3,"cols":3},{"grid":[[17,9,7],[7,6,6],[18,6,5]],"rowTargets":[7,7,6],"colTargets":[7,6,7],"solutionMask":[0,0,1,1,0,0,0,1,0],"rows":3,"cols":3},{"grid":[[4,8,4],[14,5,1],[12,5,5]],"rowTargets":[4,15,10],"colTargets":[18,5,6],"solutionMask":[1,0,0,1,0,1,0,1,1],"rows":3,"cols":3},{"grid":[[10,18,11],[10,19,1],[16,9,8]],"rowTargets":[21,10,9],"colTargets":[20,9,11],"solutionMask":[1,0,1,1,0,0,0,1,0],"rows":3,"cols":3}],"5":[{"grid":[[10,25,23],[11,17,13],[22,10,19]],"rowTargets":[10,41,10],"colTargets":[21,27,13],"solutionMask":[1,0,0,1,1,1,0,1,0],"rows":3,"cols":3},{"grid":[[13,13,11],[12,15,19],[23,11,12]],"rowTargets":[37,12,12],"colTargets":[25,13,23],"solutionMask":[1,1,1,1,0,0,0,0,1],"rows":3,"cols":3},{"grid":[[16,13,13],[10,11,23],[24,13,11]],"rowTargets":[29,11,24],"colTargets":[16,24,24],"solutionMask":[1,0,1,0,1,0,0,1,1],"rows":3,"cols":3},{"grid":[[12,13,13],[14,10,25],[13,21,14]],"rowTargets":[25,24,14],"colTargets":[26,10,27],"solutionMask":[1,0,1,1,1,0,0,0,1],"rows":3,"cols":3},{"grid":[[11,20,17],[12,14,13],[12,15,15]],"rowTargets":[11,12,42],"colTargets":[35,15,15],"solutionMask":[1,0,0,1,0,0,1,1,1],"rows":3,"cols":3}]};
+
+const LEVEL_META = {
+  1:{name:"はじめの なぎさ", desc:"2×2マス・1けたの すうじ", icon:"🏖", timeStar3:18, timeStar2:32},
+  2:{name:"くりあがりの もり", desc:"2×2マス・2けたが まざる", icon:"🌲", timeStar3:24, timeStar2:40},
+  3:{name:"3マスの さんご礁", desc:"3×3マス・1けたの すうじ", icon:"🐠", timeStar3:28, timeStar2:48},
+  4:{name:"ちえの やま", desc:"3×3マス・1けたと2けた", icon:"⛰", timeStar3:38, timeStar2:62},
+  5:{name:"キングの じょうさい", desc:"3×3マス・2けたの ボス", icon:"🏰", timeStar3:50, timeStar2:80}
+};
+
+const CARDS = {
+  1:{emoji:"🐱", name:"みならいネコ"},
+  2:{emoji:"🐰", name:"ジャンプウサギ"},
+  3:{emoji:"🐠", name:"にじいろフィッシュ"},
+  4:{emoji:"🦊", name:"ちえのキツネ"},
+  5:{emoji:"🐉", name:"キングドラゴン"}
+};
+
+const SAVE_KEY = "numbersum_save_v1";
+
+/* ============================================================
+   SAVE / STATE
+============================================================ */
+function defaultSave(){
+  return { cleared:{}, starsByPuzzle:{}, cardsUnlocked:[], levelUnlocked:1, totalScore:0 };
+}
+let save = loadSave();
+
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return defaultSave();
+    const parsed = JSON.parse(raw);
+    return Object.assign(defaultSave(), parsed);
+  }catch(e){
+    return defaultSave();
+  }
+}
+function persistSave(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){}
+}
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+let cameFromGame = false;
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function goTitle(){ stopTimer(); showScreen("screen-title"); }
+function goLevelSelect(){ stopTimer(); renderLevelList(); showScreen("screen-levels"); }
+function openGallery(){
+  cameFromGame = document.getElementById("screen-game").classList.contains("active");
+  stopTimer();
+  renderGallery();
+  showScreen("screen-gallery");
+}
+function goBackFromGallery(){
+  if(cameFromGame){ showScreen("screen-game"); }
+  else { goLevelSelect(); }
+}
+function exitGame(){ stopTimer(); goLevelSelect(); }
+
+/* ============================================================
+   LEVEL SELECT RENDER
+============================================================ */
+function levelStarsSum(level){
+  let total = 0;
+  for(let i=0;i<5;i++){
+    const k = level+"-"+i;
+    total += (save.starsByPuzzle[k]||0);
+  }
+  return total;
+}
+function levelClearedCount(level){
+  let c = 0;
+  for(let i=0;i<5;i++){ if(save.cleared[level+"-"+i]) c++; }
+  return c;
+}
+
+function renderLevelList(){
+  const wrap = document.getElementById("level-list");
+  wrap.innerHTML = "";
+  for(let lvl=1; lvl<=5; lvl++){
+    const meta = LEVEL_META[lvl];
+    const unlocked = lvl <= save.levelUnlocked;
+    const clearedCount = levelClearedCount(lvl);
+    const stars = levelStarsSum(lvl);
+    const div = document.createElement("div");
+    div.className = "level-card lvl"+lvl + (unlocked? "" : " locked");
+    div.innerHTML = `
+      <div class="isl-icon">${meta.icon}</div>
+      <div class="level-info">
+        <div class="lname">Lv.${lvl} ${meta.name}</div>
+        <div class="ldesc">${meta.desc}</div>
+        ${unlocked ? `
+          <div class="progress-pill">${clearedCount} / 5 もんクリア</div>
+          <div class="level-stars">${"⭐".repeat(Math.min(15,stars)) || "☆ まだ ないよ"}</div>
+        ` : `<div class="progress-pill" style="background:#eee;color:#999;">🔒 まえの しまを クリアしてね</div>`}
+      </div>
+      ${unlocked ? "" : `<div class="lock-icon">🔒</div>`}
+    `;
+    if(unlocked){
+      div.onclick = ()=> enterLevel(lvl);
+    }
+    wrap.appendChild(div);
+  }
+}
+
+/* ============================================================
+   GAME STATE
+============================================================ */
+let curLevel = 1;
+let curPuzzleIdx = 0;
+let curPuzzle = null;
+let selection = [];    // boolean array
+let moveStack = [];    // order of clicked cell indices
+let timerStart = 0;
+let timerHandle = null;
+let elapsedSec = 0;
+
+function enterLevel(lvl){
+  curLevel = lvl;
+  // find first uncleared puzzle in this level, else puzzle 0
+  let idx = 0;
+  for(let i=0;i<5;i++){ if(!save.cleared[lvl+"-"+i]){ idx = i; break; } if(i===4) idx = 0; }
+  curPuzzleIdx = idx;
+  loadPuzzle();
+  showScreen("screen-game");
+}
+
+function loadPuzzle(){
+  curPuzzle = PUZZLES[curLevel][curPuzzleIdx];
+  const n = curPuzzle.rows * curPuzzle.cols;
+  selection = new Array(n).fill(false);
+  moveStack = [];
+  document.getElementById("cur-level-num").textContent = curLevel;
+  renderProgressDots();
+  renderBoard();
+  startTimer();
+}
+
+function renderProgressDots(){
+  const wrap = document.getElementById("progress-dots");
+  wrap.innerHTML = "";
+  for(let i=0;i<5;i++){
+    const d = document.createElement("div");
+    let cls = "pdot";
+    if(save.cleared[curLevel+"-"+i]) cls += " done";
+    if(i===curPuzzleIdx) cls += " cur";
+    d.className = cls;
+    wrap.appendChild(d);
+  }
+}
+
+/* ---------------- Board rendering ---------------- */
+function renderBoard(){
+  const board = document.getElementById("board");
+  const rows = curPuzzle.rows, cols = curPuzzle.cols;
+  board.style.gridTemplateColumns = `repeat(${cols}, auto) auto`;
+  board.style.gridTemplateRows = `repeat(${rows}, auto) auto`;
+  board.innerHTML = "";
+
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const idx = r*cols+c;
+      const btn = document.createElement("button");
+      btn.className = "cell-btn" + (selection[idx] ? " sel" : "");
+      btn.textContent = curPuzzle.grid[r][c];
+      btn.style.gridColumn = (c+1);
+      btn.style.gridRow = (r+1);
+      btn.onclick = ()=> toggleCell(idx, btn);
+      board.appendChild(btn);
+    }
+    // row target box
+    const rb = document.createElement("div");
+    rb.id = "rowtarget-"+r;
+    rb.className = "target-box";
+    rb.style.gridColumn = (cols+1);
+    rb.style.gridRow = (r+1);
+    board.appendChild(rb);
+  }
+  // col target boxes
+  for(let c=0;c<cols;c++){
+    const cb = document.createElement("div");
+    cb.id = "coltarget-"+c;
+    cb.className = "target-box";
+    cb.style.gridColumn = (c+1);
+    cb.style.gridRow = (rows+1);
+    board.appendChild(cb);
+  }
+  // corner
+  const corner = document.createElement("div");
+  corner.className = "corner-box";
+  corner.textContent = "➕";
+  corner.style.gridColumn = (cols+1);
+  corner.style.gridRow = (rows+1);
+  board.appendChild(corner);
+
+  updateTargets();
+}
+
+function computeSums(){
+  const rows = curPuzzle.rows, cols = curPuzzle.cols;
+  const rsum = new Array(rows).fill(0);
+  const csum = new Array(cols).fill(0);
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const idx = r*cols+c;
+      if(selection[idx]){
+        rsum[r]+=curPuzzle.grid[r][c];
+        csum[c]+=curPuzzle.grid[r][c];
+      }
+    }
+  }
+  return {rsum, csum};
+}
+
+function updateTargets(){
+  const rows = curPuzzle.rows, cols = curPuzzle.cols;
+  const {rsum, csum} = computeSums();
+  for(let r=0;r<rows;r++){
+    const box = document.getElementById("rowtarget-"+r);
+    const target = curPuzzle.rowTargets[r];
+    box.innerHTML = `${target}<span class="cur">いま:${rsum[r]}</span>`;
+    box.classList.remove("match","over");
+    if(rsum[r]===target) box.classList.add("match");
+    else if(rsum[r]>target) box.classList.add("over");
+  }
+  for(let c=0;c<cols;c++){
+    const box = document.getElementById("coltarget-"+c);
+    const target = curPuzzle.colTargets[c];
+    box.innerHTML = `${target}<span class="cur">いま:${csum[c]}</span>`;
+    box.classList.remove("match","over");
+    if(csum[c]===target) box.classList.add("match");
+    else if(csum[c]>target) box.classList.add("over");
+  }
+
+  // win check
+  const allRowsMatch = rsum.every((v,i)=> v===curPuzzle.rowTargets[i]);
+  const allColsMatch = csum.every((v,i)=> v===curPuzzle.colTargets[i]);
+  const anySelected = selection.some(x=>x);
+  if(allRowsMatch && allColsMatch && anySelected){
+    setTimeout(()=> onPuzzleSolved(), 260);
+  }
+}
+
+function toggleCell(idx, btnEl){
+  selection[idx] = !selection[idx];
+  btnEl.classList.toggle("sel", selection[idx]);
+  btnEl.classList.remove("pop"); void btnEl.offsetWidth; btnEl.classList.add("pop");
+  if(selection[idx]){
+    moveStack.push(idx);
+  } else {
+    moveStack = moveStack.filter(m=>m!==idx);
+  }
+  updateTargets();
+}
+
+function undoMove(){
+  if(moveStack.length===0) return;
+  const idx = moveStack.pop();
+  selection[idx] = false;
+  renderBoard();
+}
+function resetBoard(){
+  selection = selection.map(()=>false);
+  moveStack = [];
+  renderBoard();
+}
+
+/* ---------------- Timer ---------------- */
+function startTimer(){
+  stopTimer();
+  timerStart = Date.now();
+  elapsedSec = 0;
+  document.getElementById("timer-disp").textContent = "0.0";
+  timerHandle = setInterval(()=>{
+    elapsedSec = (Date.now()-timerStart)/1000;
+    document.getElementById("timer-disp").textContent = elapsedSec.toFixed(1);
+  }, 100);
+}
+function stopTimer(){
+  if(timerHandle){ clearInterval(timerHandle); timerHandle = null; }
+}
+
+/* ---------------- Solve / scoring ---------------- */
+function starsForTime(level, seconds){
+  const meta = LEVEL_META[level];
+  if(seconds <= meta.timeStar3) return 3;
+  if(seconds <= meta.timeStar2) return 2;
+  return 1;
+}
+
+function onPuzzleSolved(){
+  stopTimer();
+  const finalTime = elapsedSec;
+  const stars = starsForTime(curLevel, finalTime);
+  const key = curLevel+"-"+curPuzzleIdx;
+  const prevStars = save.starsByPuzzle[key]||0;
+  save.cleared[key] = true;
+  save.starsByPuzzle[key] = Math.max(prevStars, stars);
+  save.totalScore += stars*100;
+  persistSave();
+
+  const clearedCount = levelClearedCount(curLevel);
+  const levelJustCompleted = (clearedCount===5) && !save.cardsUnlocked.includes(curLevel);
+
+  if(levelJustCompleted){
+    save.cardsUnlocked.push(curLevel);
+    if(save.levelUnlocked < curLevel+1 && curLevel<5){
+      save.levelUnlocked = curLevel+1;
+    }
+    persistSave();
+    showCardModal(stars, finalTime, curLevel);
+  } else {
+    showStarModal(stars, finalTime);
+  }
+}
+
+function showStarModal(stars, time){
+  const box = document.getElementById("modal-box");
+  box.innerHTML = `
+    <div class="modal-title">せいかい！ 🎉</div>
+    <div class="stars-big">${"⭐".repeat(stars)}${"☆".repeat(3-stars)}</div>
+    <div class="modal-sub">タイム: ${time.toFixed(1)}秒</div>
+    <div class="stack">
+      <button class="btn btn-primary" onclick="nextPuzzle()">つぎの もんだいへ ▶</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModalToLevels()">しまマップに もどる</button>
+    </div>
+  `;
+  document.getElementById("modal-overlay").classList.add("show");
+}
+
+function showCardModal(stars, time, level){
+  const card = CARDS[level];
+  const box = document.getElementById("modal-box");
+  box.innerHTML = `
+    <div class="modal-title">しまクリア！🏝</div>
+    <div class="stars-big">${"⭐".repeat(stars)}${"☆".repeat(3-stars)}</div>
+    <div class="modal-sub">なかまが なかまに なった！</div>
+    <div class="card-reveal">
+      <div class="emoji">${card.emoji}</div>
+      <div class="cname">${card.name}</div>
+    </div>
+    <div class="stack">
+      <button class="btn btn-primary" onclick="closeModalToLevels()">しまマップに もどる</button>
+    </div>
+  `;
+  document.getElementById("modal-overlay").classList.add("show");
+}
+
+function nextPuzzle(){
+  document.getElementById("modal-overlay").classList.remove("show");
+  if(curPuzzleIdx < 4){
+    curPuzzleIdx += 1;
+    loadPuzzle();
+  } else {
+    goLevelSelect();
+  }
+}
+function closeModalToLevels(){
+  document.getElementById("modal-overlay").classList.remove("show");
+  goLevelSelect();
+}
+
+/* ============================================================
+   GALLERY
+============================================================ */
+function renderGallery(){
+  const grid = document.getElementById("gallery-grid");
+  grid.innerHTML = "";
+  for(let lvl=1; lvl<=5; lvl++){
+    const unlocked = save.cardsUnlocked.includes(lvl);
+    const card = CARDS[lvl];
+    const div = document.createElement("div");
+    div.className = "gcard" + (unlocked? "" : " locked");
+    div.innerHTML = unlocked ? `
+      <div class="emoji">${card.emoji}</div>
+      <div class="cname">${card.name}</div>
+      <div class="clevel">Lv.${lvl} のなかま</div>
+    ` : `
+      <div class="emoji">❓</div>
+      <div class="cname">？？？</div>
+      <div class="clevel">Lv.${lvl} を クリアしてね</div>
+    `;
+    grid.appendChild(div);
+  }
+}
+
+/* ============================================================
+   RESET SAVE
+============================================================ */
+function confirmResetSave(){
+  const ok = confirm("ほんとうに けしますか？\nいままでの きろくが すべて きえます。");
+  if(ok){
+    save = defaultSave();
+    persistSave();
+    alert("セーブデータを けしました。さいしょから たのしんでね！");
+    renderLevelList();
+  }
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+(function init(){
+  // nothing else needed; title screen is default active
+})();
+</script>
+</body>
+</html>
